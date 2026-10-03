@@ -241,3 +241,4 @@ Receipt OCR (behind a provider adapter like AI), split transactions, budget roll
 - [x] Task 1: Scaffold (Next.js 16 + TS + Tailwind 4 + shadcn/ui + ESLint/Prettier + Vitest + Playwright)
 - [x] Task 2: Local Supabase (CLI in devDeps; realtime/storage/edge/analytics disabled), `env.ts`, browser/server clients, `health_check()` RPC + `/health` page, `db:*` scripts
 - [x] Task 3: `domain/money` (parse/format/decimals per currency, exact via BigInt; 38 tests), `domain/money/group` (sum per currency), `domain/dates/month` (today/current month per timezone, month ranges, addMonths; 23 tests). TS target raised to ES2022 for BigInt.
+- [x] Task 4: GitHub Actions CI (`.github/workflows/ci.yml`): format check, lint, typecheck, unit tests, build on push to main and PRs. `.nvmrc` pins Node 24; `.gitattributes` enforces LF.

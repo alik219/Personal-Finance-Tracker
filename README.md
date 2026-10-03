@@ -1,5 +1,7 @@
 # Personal Finance Tracker
 
+[![CI](https://github.com/alik219/Personal-Finance-Tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/alik219/Personal-Finance-Tracker/actions/workflows/ci.yml)
+
 Multi-user personal finance web app: accounts and transfers, CSV import, rules + AI categorization, budgets, recurring bills, savings goals. Built with Next.js, TypeScript, Tailwind, shadcn/ui and Supabase, all on free tiers.
 
 See [docs/PLAN.md](docs/PLAN.md) for the architecture and backlog.
