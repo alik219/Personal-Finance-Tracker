@@ -33,3 +33,4 @@ See [docs/PLAN.md](docs/PLAN.md) for the architecture and backlog.
 | `npm run db:status` | Show local URLs and keys (Studio at http://127.0.0.1:54323)  |
 | `npm run db:reset`  | Recreate the local database and re-run all migrations        |
 | `npm run db:types`  | Regenerate `src/lib/supabase/types.ts` from the local schema |
+| `npm run db:test`   | Run the database (pgTAP) tests in `supabase/tests`           |

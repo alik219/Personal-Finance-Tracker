@@ -22,7 +22,7 @@ D
 - **Money:** `bigint amount_minor` + `char(3) currency` (ISO 4217). Never floats. Sign convention: negative = outflow.
 - **Money at the API boundary:** Supabase returns Postgres `bigint` as a JSON number, so repos convert with `BigInt(n)` on read and send `Number(x)` (or a string) on write. Exact up to 2^53 minor units, far beyond any realistic balance. In the app, money is always `bigint`; use `src/domain/money` to parse and format.
 - **Dates:** transactions use `date` (no time). Month boundaries use `profiles.timezone`.
-- **Isolation:** every user-owned table has `user_id uuid default auth.uid()` + RLS `user_id = auth.uid()`.
+- **Isolation:** every user-owned table has `user_id uuid default auth.uid()` + RLS `(select auth.uid()) = user_id`. Supabase grants anon/authenticated ALL on new tables by default, so each migration must `revoke all ... from anon, authenticated` and grant back only the needed operations (column-level for updates). Helper functions go in the unexposed `private` schema. See `supabase/migrations/*_profiles.sql` for the template.
 - **Transfers:** two transaction rows sharing `transfer_group_id`, `kind='transfer'`, excluded from income/expense, budgets, and AI. Cross-currency transfers store both amounts as entered.
 - **Category provenance:** `category_source enum('none','rule','ai','manual')`. Automation never overwrites `manual`.
 - **Gemini privacy:** send only `description` + sign/amount bucket + the user's category names. No user ids, account names, or balances. Disclose in a privacy note at signup (free-tier prompts may be used by Google).
@@ -242,3 +242,4 @@ Receipt OCR (behind a provider adapter like AI), split transactions, budget roll
 - [x] Task 2: Local Supabase (CLI in devDeps; realtime/storage/edge/analytics disabled), `env.ts`, browser/server clients, `health_check()` RPC + `/health` page, `db:*` scripts
 - [x] Task 3: `domain/money` (parse/format/decimals per currency, exact via BigInt; 38 tests), `domain/money/group` (sum per currency), `domain/dates/month` (today/current month per timezone, month ranges, addMonths; 23 tests). TS target raised to ES2022 for BigInt.
 - [x] Task 4: GitHub Actions CI (`.github/workflows/ci.yml`): format check, lint, typecheck, unit tests, build on push to main and PRs. `.nvmrc` pins Node 24; `.gitattributes` enforces LF.
+- [x] Task 5: `profiles` table + sign-up trigger (validated metadata with defaults) + column-level grants + RLS; `private` schema for helpers; 19 pgTAP tests (`npm run db:test`); verified via real Auth sign-up + REST.
