@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { BudgetsView } from "@/components/budgets/budgets-view";
-import { MonthPicker } from "@/components/budgets/month-picker";
+import { MonthPicker } from "@/components/common/month-picker";
 import { PageHeader } from "@/components/common/page-header";
 import { addMonths, monthOf } from "@/domain/dates/month";
 import { requireUser } from "@/lib/auth/session";
@@ -45,7 +45,13 @@ export default async function BudgetsPage({
       <PageHeader
         title="Budgets"
         description="Monthly spending limits per category."
-        actions={<MonthPicker month={month} current={current} />}
+        actions={
+          <MonthPicker
+            month={month}
+            current={current}
+            href={(m) => (m === current ? "/budgets" : `/budgets?month=${m}`)}
+          />
+        }
       />
       <BudgetsView
         // Fresh state (e.g. the copy message) per month.

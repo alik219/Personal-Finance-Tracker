@@ -8,12 +8,13 @@ import { addMonths, formatMonth, type MonthKey } from "@/domain/dates/month";
 export function MonthPicker({
   month,
   current,
+  href,
 }: {
   month: MonthKey;
   current: MonthKey;
+  /** The page URL showing month `m`. */
+  href: (m: MonthKey) => string;
 }) {
-  const href = (m: MonthKey) =>
-    m === current ? "/budgets" : `/budgets?month=${m}`;
   const prev = addMonths(month, -1);
   const next = addMonths(month, 1);
 
@@ -38,7 +39,7 @@ export function MonthPicker({
       </Link>
       {month !== current && (
         <Link
-          href="/budgets"
+          href={href(current)}
           className={buttonVariants({ variant: "ghost", size: "sm" })}
         >
           This month

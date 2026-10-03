@@ -237,6 +237,23 @@ export type Database = {
     Functions: {
       claim_ai_run: { Args: Record<PropertyKey, never>; Returns: boolean };
       health_check: { Args: Record<PropertyKey, never>; Returns: string };
+      monthly_totals: {
+        Args: { p_end: string; p_start: string };
+        Returns: {
+          currency: string;
+          income: number;
+          month: string;
+          spending: number;
+        }[];
+      };
+      spend_by_category: {
+        Args: { p_end: string; p_start: string };
+        Returns: {
+          category_id: string;
+          currency: string;
+          spending: number;
+        }[];
+      };
     };
     Enums: {
       account_type:
