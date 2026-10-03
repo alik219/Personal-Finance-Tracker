@@ -19,12 +19,12 @@ test("navigation reaches every section", async ({ page, isMobile }) => {
     await expect(link).toHaveAttribute("aria-current", "page");
   }
 
-  // Secondary sections: in the sidebar on desktop, under "More" on phones.
-  for (const name of ["Recurring", "Goals", "Import", "Settings"]) {
-    if (isMobile) await nav.getByRole("button", { name: "More" }).click();
-    await page.getByRole("link", { name }).click();
-    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
-  }
+  // Secondary section: in the sidebar on desktop, under "More" on phones.
+  if (isMobile) await nav.getByRole("button", { name: "More" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Settings" }),
+  ).toBeVisible();
 });
 
 test("desktop shows the sidebar, phones show the bottom bar", async ({

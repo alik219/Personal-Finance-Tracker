@@ -42,6 +42,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      categories: {
+        Row: {
+          color: string;
+          created_at: string;
+          hidden: boolean;
+          icon: string;
+          id: string;
+          kind: Database["public"]["Enums"]["category_kind"];
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          color?: string;
+          created_at?: string;
+          hidden?: boolean;
+          icon?: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["category_kind"];
+          name: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string;
+          hidden?: boolean;
+          icon?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["category_kind"];
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -105,6 +141,7 @@ export type Database = {
         | "investment"
         | "loan"
         | "other";
+      category_kind: "income" | "expense";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -241,6 +278,7 @@ export const Constants = {
         "loan",
         "other",
       ],
+      category_kind: ["income", "expense"],
     },
   },
 } as const;

@@ -2,10 +2,7 @@ import {
   ArrowLeftRight,
   LayoutDashboard,
   PiggyBank,
-  Repeat,
   Settings,
-  Target,
-  Upload,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -38,9 +35,6 @@ export const NAV_ITEMS: NavItem[] = [
     icon: PiggyBank,
     primaryOnMobile: true,
   },
-  { href: "/recurring", label: "Recurring", icon: Repeat },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/import", label: "Import", icon: Upload },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

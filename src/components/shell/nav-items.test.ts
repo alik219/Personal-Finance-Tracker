@@ -9,7 +9,7 @@ describe("isActivePath", () => {
   });
 
   it("does not match pages that merely share a prefix", () => {
-    expect(isActivePath("/goalsx", "/goals")).toBe(false);
+    expect(isActivePath("/budgetsx", "/budgets")).toBe(false);
     expect(isActivePath("/dashboard", "/transactions")).toBe(false);
   });
 });

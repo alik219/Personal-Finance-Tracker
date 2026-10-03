@@ -9,7 +9,7 @@ export default function Home() {
         Personal Finance Tracker
       </h1>
       <p className="text-muted-foreground">
-        Accounts, budgets, recurring bills and savings goals in one place.
+        Accounts, spending and budgets in one place, with AI categorization.
       </p>
       <div className="flex gap-3">
         <Link href="/signup" className={buttonVariants()}>

@@ -51,7 +51,7 @@ export function SignUpForm() {
           <h1>Create your account</h1>
         </CardTitle>
         <CardDescription>
-          Track your accounts, budgets and goals in one place.
+          Track your accounts, spending and budgets in one place.
         </CardDescription>
       </CardHeader>
       <form action={formAction}>

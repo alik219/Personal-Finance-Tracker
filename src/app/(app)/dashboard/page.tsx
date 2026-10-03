@@ -30,7 +30,7 @@ export default async function DashboardPage({
         Welcome, {profile?.display_name ?? user.email}
       </h1>
       <p className="text-muted-foreground">
-        Your dashboard is coming soon: accounts, budgets and goals will show up
+        Your dashboard is coming soon: spending, trends and budgets will show up
         here.
       </p>
     </div>

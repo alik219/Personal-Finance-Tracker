@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Personal Finance Tracker",
-  description: "Track accounts, budgets, recurring bills and savings goals.",
+  description: "Track accounts, spending and budgets, with AI categorization.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
