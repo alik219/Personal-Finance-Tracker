@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  fieldErrorsOf,
-  resetPasswordSchema,
-  signInSchema,
-  signUpSchema,
-} from "./auth";
+import { resetPasswordSchema, signInSchema, signUpSchema } from "./auth";
+import { fieldErrorsOf } from "./form";
 
 const validSignUp = {
   displayName: "  Alice  ",

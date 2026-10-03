@@ -41,16 +41,3 @@ export const resetPasswordSchema = z
     message: "Passwords don't match.",
     path: ["confirmPassword"],
   });
-
-/** Shape returned by auth server actions to their forms. */
-export type FormState = {
-  error?: string;
-  success?: string;
-  fieldErrors?: Partial<Record<string, string[]>>;
-  /** Echoed back so fields keep their values after a failed submit. */
-  values?: Record<string, string>;
-};
-
-export function fieldErrorsOf(error: z.ZodError): FormState["fieldErrors"] {
-  return z.flattenError(error).fieldErrors as FormState["fieldErrors"];
-}

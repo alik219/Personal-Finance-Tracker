@@ -5,13 +5,12 @@ import { redirect } from "next/navigation";
 import { LOGIN_PATH, safeNextPath } from "@/lib/auth/routes";
 import { createClient } from "@/lib/supabase/server";
 import {
-  fieldErrorsOf,
   forgotPasswordSchema,
   resetPasswordSchema,
   signInSchema,
   signUpSchema,
-  type FormState,
 } from "@/lib/validation/auth";
+import { fieldErrorsOf, type FormState } from "@/lib/validation/form";
 
 const text = (formData: FormData, key: string) =>
   String(formData.get(key) ?? "");

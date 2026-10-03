@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { FormState } from "@/lib/validation/auth";
+import type { FormState } from "@/lib/validation/form";
 import { updatePassword } from "@/server/actions/auth";
 
 export function ResetPasswordForm() {

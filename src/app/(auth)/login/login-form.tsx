@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { FormState } from "@/lib/validation/auth";
+import type { FormState } from "@/lib/validation/form";
 import { signIn } from "@/server/actions/auth";
 
 export function LoginForm({

@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          created_at: string;
+          currency: string;
+          id: string;
+          name: string;
+          opening_balance_minor: number;
+          type: Database["public"]["Enums"]["account_type"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          currency: string;
+          id?: string;
+          name: string;
+          opening_balance_minor?: number;
+          type: Database["public"]["Enums"]["account_type"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          currency?: string;
+          id?: string;
+          name?: string;
+          opening_balance_minor?: number;
+          type?: Database["public"]["Enums"]["account_type"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -38,13 +71,40 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      account_balances: {
+        Row: {
+          account_id: string | null;
+          balance_minor: number | null;
+          currency: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          account_id?: string | null;
+          balance_minor?: number | null;
+          currency?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          account_id?: string | null;
+          balance_minor?: number | null;
+          currency?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       health_check: { Args: Record<PropertyKey, never>; Returns: string };
     };
     Enums: {
-      [_ in never]: never;
+      account_type:
+        | "checking"
+        | "savings"
+        | "credit_card"
+        | "cash"
+        | "investment"
+        | "loan"
+        | "other";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -171,6 +231,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_type: [
+        "checking",
+        "savings",
+        "credit_card",
+        "cash",
+        "investment",
+        "loan",
+        "other",
+      ],
+    },
   },
 } as const;

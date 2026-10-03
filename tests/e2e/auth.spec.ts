@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { logIn, signOut } from "./helpers/auth";
 import { getEmailLink } from "./helpers/mailpit";
 import {
   createConfirmedUser,
@@ -12,14 +13,6 @@ import {
 // Scoped to <main>: Next.js adds its own role="alert" route announcer.
 const formAlert = (page: Page) => page.getByRole("main").getByRole("alert");
 const formStatus = (page: Page) => page.getByRole("main").getByRole("status");
-
-async function logIn(page: Page, email: string, password: string) {
-  // Wait for the login page itself, so typing never lands on the previous page.
-  await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Log in" }).click();
-}
 
 test("sign up, confirm by email, and land on the dashboard", async ({
   page,
@@ -110,8 +103,7 @@ test("signed-in users skip login, and signing out locks the app again", async ({
   await page.goto("/login");
   await expect(page).toHaveURL("/dashboard");
 
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL("/login");
+  await signOut(page);
 
   await page.goto("/dashboard");
   await expect(page).toHaveURL("/login?next=%2Fdashboard");
@@ -144,7 +136,7 @@ test("reset a forgotten password by email", async ({ page }) => {
   await expect(formStatus(page)).toHaveText("Your password has been updated.");
 
   // Old password no longer works; the new one does.
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await signOut(page);
   await logIn(page, user.email, user.password);
   await expect(formAlert(page)).toHaveText("Incorrect email or password.");
   await page.getByLabel("Password").fill(newPassword);
