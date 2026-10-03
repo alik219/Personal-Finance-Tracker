@@ -224,31 +224,23 @@ Each task is small, independently testable, and merges on its own. **Done when**
 42. **Hardening**: a11y pass (axe in Playwright), loading/error boundaries, security headers, Gemini privacy note at signup.
 43. **Deploy**: Supabase cloud free project, run migrations, Vercel Hobby, Google OAuth prod redirect URLs, optional keep-alive workflow. Mirror `supabase/config.toml` auth settings in the cloud dashboard: Site URL + redirect URLs, email confirmations on, min password 8 with letters+digits, and the `supabase/templates/*.html` email templates (local rate-limit overrides do NOT carry over). _Done when:_ full E2E smoke run against production.
 
-### Batches (how the remaining tasks are delivered)
+### Scope cut (decided 2026-10-03)
 
-Low-risk tasks are combined; each task inside a batch is still verified before the next. One summary and one commit per batch.
+This is a learning project, so the remaining work is trimmed to a **short version plus the AI feature**. The task descriptions above stay as reference, but only the batches below will be built, in this order.
 
-| #   | Batch                                           | Why grouped / separate                                |
-| --- | ----------------------------------------------- | ----------------------------------------------------- |
-| A   | Task 7: Google OAuth                            | Separate: needs Google Cloud setup by the user        |
-| B   | Task 8: TOTP MFA                                | Separate: security-critical                           |
-| C   | Tasks 9–11: App shell + accounts                | Shell is small; accounts table and UI belong together |
-| D   | Tasks 12–13: Categories                         | Table and UI belong together                          |
-| E   | Tasks 14–15: Transactions table + list          | Big milestone, split in pieces                        |
-| F   | Task 16: Transaction form + quick-add           |                                                       |
-| G   | Task 17: Transfers                              | Tricky (paired rows, delete trigger)                  |
-| H   | Tasks 18–20: Rules                              | Small, self-contained                                 |
-| I   | Task 21: AI provider + pipeline (fake provider) |                                                       |
-| J   | Tasks 22–23: Gemini adapter + categorize route  | Needs a Gemini API key from the user                  |
-| K   | Tasks 24–25: CSV parsing + dedup (pure logic)   | Biggest milestone, split in pieces                    |
-| L   | Tasks 26–28: Import tables, wizard UI, undo     |                                                       |
-| M   | Tasks 29–31: Budgets                            | Small, self-contained                                 |
-| N   | Tasks 32–35: Recurring                          | Self-contained                                        |
-| O   | Tasks 36–37: Savings goals                      | Small                                                 |
-| P   | Tasks 38–39: Dashboard                          |                                                       |
-| Q   | Tasks 40–41: Export + account deletion          | Small, both data rights                               |
-| R   | Task 42: Hardening                              |                                                       |
-| S   | Task 43: Deploy                                 | Separate: needs Vercel/Supabase cloud accounts        |
+| #   | Batch                                           | Notes                                                                                                                                           |
+| --- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| D   | Tasks 12–13: Categories                         | Also remove the dropped sections (Recurring, Goals, Import) from the nav and delete their stub pages. Settings keeps only Profile + Categories. |
+| E   | Tasks 14–15: Transactions table + list          | `kind` is income/expense only (no transfers, no `transfer_group_id`, no import batch). Redefine `account_balances` to include transactions.     |
+| F   | Task 16: Transaction form + quick-add           | Manual category sets `category_source='manual'`. No "create rule" prompt (rules are cut).                                                       |
+| I   | Task 21: AI provider + pipeline (fake provider) | Pipeline without rules: skip manual rows, send uncategorized rows to the provider, validate returned category ids.                              |
+| J   | Tasks 22–23: Gemini adapter + categorize route  | Needs a free Gemini API key from the user (never enable billing). "Auto-categorize uncategorized" button on Transactions.                       |
+| M   | Tasks 29–31: Budgets                            | No transfer exclusion needed (no transfers).                                                                                                    |
+| P   | Tasks 38–39: Dashboard                          | Only KPIs, spend by category, trend, budget summary. No upcoming bills or goals widgets.                                                        |
+
+Each task inside a batch is still verified before the next; one summary and one commit per batch.
+
+**Dropped (not planned):** A Google sign-in (7), B MFA (8), G transfers (17), H rules (18–20), K/L CSV import (24–28), N recurring (32–35), O goals (36–37), Q export + account deletion (40–41), R hardening (42), S deploy (43). They can be picked up later from the task list above if wanted.
 
 ### v2 backlog (not in scope)
 
