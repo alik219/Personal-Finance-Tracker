@@ -1,0 +1,249 @@
+# Personal Finance Tracker — Component Map & Implementation Backlog
+
+## Context
+
+A greenfield, **multi-user, zero-cost** web app for tracking personal finances, built in `D:\Projects\Personal Finance Tracker`. Requirements come from a 8-round interview. This document is Phase 2 (modular component map) and Phase 3 (ordered backlog). No application code yet.
+
+## Locked decisions (from interview)
+
+| Area           | Decision                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| Platform       | Web app, responsive (sidebar on desktop, bottom tabs on mobile), light/dark, quick-add everywhere |
+| Users          | Multi-user product, free/personal (not monetized)                                                 |
+| Stack          | Next.js (App Router) + TypeScript, shadcn/ui + Tailwind, Recharts                                 |
+| Backend        | Supabase Free (Postgres + Auth + RLS). Hosting: Vercel Hobby                                      |
+| Cost           | **$0**: every service on a free tier                                                              |
+| Auth           | Email+password, Google OAuth, TOTP MFA                                                            |
+| Input          | Manual entry + CSV import. Receipt OCR **deferred to v2**                                         |
+| Accounts       | Multiple accounts + transfers. Deleting an account **cascades** (with confirmation)               |
+| Currency       | Multi-currency per account, **no conversion**. All totals grouped by currency                     |
+| Categories     | Default set + custom, **flat**. One category per transaction (splits in v2)                       |
+| Categorization | **Rules → Gemini (free tier) → manual override** (manual edit offers "create rule")               |
+| CSV            | Column mapper + saved preset per account. Duplicates: detect and review before commit             |
+| Recurring      | Shown as "upcoming"; user confirms to post                                                        |
+| Budgets        | Per category per month, no rollover, in-app alerts at 80%/100%                                    |
+| Goals          | Manual contributions, separate from account balances                                              |
+| v1 extras      | CSV data export, self-service account deletion                                                    |
+| Testing        | Vitest (pure logic) + Playwright (E2E) + pgTAP RLS tests on local Supabase                        |
+
+## Cross-cutting design rules
+
+- **Money:** `bigint amount_minor` + `char(3) currency` (ISO 4217). Never floats. Sign convention: negative = outflow.
+- **Dates:** transactions use `date` (no time). Month boundaries use `profiles.timezone`.
+- **Isolation:** every user-owned table has `user_id uuid default auth.uid()` + RLS `user_id = auth.uid()`.
+- **Transfers:** two transaction rows sharing `transfer_group_id`, `kind='transfer'`, excluded from income/expense, budgets, and AI. Cross-currency transfers store both amounts as entered.
+- **Category provenance:** `category_source enum('none','rule','ai','manual')`. Automation never overwrites `manual`.
+- **Gemini privacy:** send only `description` + sign/amount bucket + the user's category names. No user ids, account names, or balances. Disclose in a privacy note at signup (free-tier prompts may be used by Google).
+- **Free-tier resilience:** AI calls are batched (~50 rows per call), retry with backoff on 429, and on failure leave rows `none` instead of blocking.
+- **No cron needed:** recurring "upcoming" items are computed on read, so there's no paid scheduler.
+- **Supabase pause:** free projects pause after 7 days idle. An optional free GitHub Actions weekly ping keeps it awake.
+
+---
+
+## Phase 2 — Modular Component Map
+
+### Database (`supabase/`)
+
+| File                              | Responsibility                                                                                                                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `migrations/001_profiles.sql`     | `profiles` (display_name, timezone, default_currency) + trigger on `auth.users` insert                                                                                                                       |
+| `migrations/002_accounts.sql`     | `accounts` (name, type, currency, opening_balance_minor), `account_balances` view                                                                                                                            |
+| `migrations/003_categories.sql`   | `categories` (name, kind income/expense, color, icon, hidden) + seed-defaults function called by the profile trigger                                                                                         |
+| `migrations/004_transactions.sql` | `transactions` (account_id FK **on delete cascade**, date, amount_minor, description, normalized_description, category_id, category_source, kind, transfer_group_id, import_batch_id, fingerprint) + indexes |
+| `migrations/005_transfers.sql`    | `create_transfer()` RPC + trigger: when one leg is deleted (incl. account cascade), convert the surviving leg to a normal income/expense                                                                     |
+| `migrations/006_rules.sql`        | `categorization_rules` (field, operator contains/equals/starts_with/regex, pattern, optional account_id, amount range, category_id, priority)                                                                |
+| `migrations/007_imports.sql`      | `csv_mapping_presets` (per account), `import_batches` (status, row counts) + `commit_import()` RPC (atomic insert)                                                                                           |
+| `migrations/008_budgets.sql`      | `budgets` (category_id, currency, amount_minor, effective month); unique (user, category, currency, month)                                                                                                   |
+| `migrations/009_recurring.sql`    | `recurring_rules` (account, amount, description, category, frequency, interval, anchor_date, next_due, end_date, active)                                                                                     |
+| `migrations/010_goals.sql`        | `savings_goals` (name, currency, target_minor, deadline), `goal_contributions`                                                                                                                               |
+| `migrations/011_reports.sql`      | SQL functions: `monthly_totals(month)`, `spend_by_category(range)`, `trend(range)`, all grouped by currency                                                                                                  |
+| `migrations/0xx_rls.sql`          | RLS policies for every table                                                                                                                                                                                 |
+| `tests/*.test.sql`                | pgTAP: user A can't read/write user B's rows; transfer trigger; cascade                                                                                                                                      |
+
+### Infrastructure (`src/lib/`)
+
+| Module                 | Responsibility                                                             |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `supabase/browser.ts`  | Browser client                                                             |
+| `supabase/server.ts`   | Server client (cookies) for RSC and route handlers                         |
+| `supabase/admin.ts`    | Service-role client, **server-only**, used only by account deletion        |
+| `supabase/types.ts`    | Generated DB types (`supabase gen types`)                                  |
+| `env.ts`               | Zod-validated env vars (fails fast)                                        |
+| `middleware.ts` (root) | Session refresh, protect `(app)` routes, enforce AAL2 when MFA is enrolled |
+
+### Pure domain logic (`src/domain/`): no I/O, 100% unit-tested
+
+| Module                   | Responsibility                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `money/money.ts`         | Parse user input → minor units per currency's decimals; format with `Intl.NumberFormat`; sum per currency                              |
+| `money/group.ts`         | Group/sum arrays by currency (`Record<Currency, bigint>`)                                                                              |
+| `dates/month.ts`         | Month ranges in a timezone; next/prev month                                                                                            |
+| `csv/parse.ts`           | Papa Parse wrapper → header + raw rows; detect delimiter and encoding                                                                  |
+| `csv/mapping.ts`         | Mapping type (date col, description col, amount mode: signed / debit+credit / inverted; date format) + validate a mapping              |
+| `csv/normalize.ts`       | Raw row + mapping → `DraftTransaction` or row error (bad date, bad amount)                                                             |
+| `text/normalize.ts`      | Normalize descriptions (case, whitespace, strip card numbers/dates) for rules, dedup, and AI                                           |
+| `dedup/fingerprint.ts`   | `account + date + amount + normalized_description` → hash                                                                              |
+| `dedup/detect.ts`        | Flag drafts as `duplicate-in-db`, `duplicate-in-file`, or `matches-upcoming-recurring` (±3 days, same amount)                          |
+| `rules/match.ts`         | Does one rule match a draft?                                                                                                           |
+| `rules/apply.ts`         | Apply ordered rules to drafts → category + `source='rule'`                                                                             |
+| `categorize/pipeline.ts` | Orchestrate: skip manual → rules → collect leftovers → AI provider → merge results; validate AI output against the user's category ids |
+| `ai/provider.ts`         | `CategorizationProvider` interface (`categorize(items, categories) → {id, categoryId \| null, confidence}`)                            |
+| `recurring/schedule.ts`  | Occurrences between dates for frequency/interval (month-end clamping, leap years)                                                      |
+| `recurring/upcoming.ts`  | Upcoming/overdue items from rules + `next_due`; advance after confirm/skip                                                             |
+| `budgets/progress.ts`    | Spent vs. budget per category/currency/month (excludes transfers)                                                                      |
+| `budgets/alerts.ts`      | Thresholds → `ok \| warning(80%) \| over(100%)`                                                                                        |
+| `goals/progress.ts`      | Percent, remaining, required monthly pace to hit deadline                                                                              |
+| `export/toCsv.ts`        | Serialize tables to CSV strings                                                                                                        |
+
+### Server adapters & API (`src/server/`, `src/app/api/`)
+
+| Module                            | Responsibility                                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/ai/gemini.ts`             | `CategorizationProvider` using Gemini Flash free tier, JSON-schema structured output, batching, 429 backoff, privacy-minimized payload |
+| `server/repos/*.ts`               | One repo per table (accounts, categories, transactions, rules, imports, budgets, recurring, goals): typed Supabase queries only        |
+| `server/actions/*.ts`             | Server Actions per feature (create/update/delete), Zod-validated, call repos, `revalidatePath`                                         |
+| `app/api/categorize/route.ts`     | POST drafts → pipeline (rules + Gemini) → categorized drafts. Per-user rate limit                                                      |
+| `app/api/export/route.ts`         | Streams a ZIP (JSZip) of the user's CSVs                                                                                               |
+| `app/api/account/delete/route.ts` | Requires re-auth/AAL2 → admin client deletes the auth user → DB cascades                                                               |
+| `app/auth/callback/route.ts`      | OAuth/email confirmation code exchange                                                                                                 |
+| `lib/validation/*.ts`             | Zod schemas shared by forms and actions                                                                                                |
+
+### Client state (`src/state/`)
+
+| Module                   | Responsibility                                                                          |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `query-client.tsx`       | TanStack Query provider + key factory (server state cache)                              |
+| `import-wizard/store.ts` | Zustand store for the CSV wizard (file → mapping → preview/dedup → categorize → commit) |
+| `ui/quick-add.ts`        | Global quick-add sheet open/close state                                                 |
+
+### UI (`src/app/` routes + `src/components/`)
+
+| Route / Component                                                                                                                                       | Responsibility                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `(auth)/login`, `signup`, `forgot-password`, `reset-password`                                                                                           | Auth pages                                                                                                           |
+| `(auth)/mfa/verify`                                                                                                                                     | TOTP challenge                                                                                                       |
+| `(app)/layout.tsx` + `components/shell/AppShell, Sidebar, BottomNav, ThemeToggle, QuickAddFab`                                                          | Responsive shell                                                                                                     |
+| `(app)/dashboard` + `components/dashboard/CurrencyTabs, KpiCards, SpendByCategoryChart, TrendChart, BudgetSummary, UpcomingBills, GoalsSummary`         | Overview                                                                                                             |
+| `(app)/transactions` + `components/transactions/TransactionTable, Filters, TransactionForm, TransferForm, CategoryBadge(source icon), CreateRulePrompt` | List/add/edit, filters, pagination                                                                                   |
+| `(app)/accounts` + `components/accounts/AccountList, AccountForm, DeleteAccountDialog(type-to-confirm)`                                                 | Accounts CRUD + balances                                                                                             |
+| `(app)/import` + `components/import/FileDrop, MappingStep, PreviewStep(dup flags), CategorizeStep, CommitStep, ImportHistory(undo)`                     | CSV wizard                                                                                                           |
+| `(app)/budgets` + `components/budgets/BudgetGrid, BudgetProgressBar, MonthPicker, AlertBanner`                                                          | Budgets                                                                                                              |
+| `(app)/recurring` + `components/recurring/RecurringList, RecurringForm, UpcomingList(confirm/skip)`                                                     | Recurring                                                                                                            |
+| `(app)/goals` + `components/goals/GoalCard, GoalForm, ContributionForm`                                                                                 | Goals                                                                                                                |
+| `(app)/settings/{profile,categories,rules,security,data}`                                                                                               | Profile/timezone, category manager, rules manager (test a rule live), MFA enroll + password, export + delete account |
+| `components/ui/*`                                                                                                                                       | shadcn primitives                                                                                                    |
+| `components/common/MoneyText, MoneyInput, CurrencySelect, EmptyState, ConfirmDialog`                                                                    | Shared                                                                                                               |
+
+### Tests & tooling
+
+`vitest.config.ts`, `src/domain/**/*.test.ts`, `tests/e2e/*.spec.ts` (Playwright against local Supabase), `supabase/tests/*.sql` (pgTAP), `.github/workflows/ci.yml` (lint, typecheck, unit, pgTAP, e2e: free for public/private within GH minutes), optional `keepalive.yml`.
+
+---
+
+## Phase 3 — Step-by-Step Implementation Backlog
+
+Each task is small, independently testable, and merges on its own. **Done when** = acceptance test.
+
+### M0: Foundation
+
+1. **Scaffold** Next.js + TS + Tailwind + shadcn + ESLint/Prettier + Vitest + Playwright. _Done when:_ `npm run lint/typecheck/test` all pass on an empty app.
+2. **Local Supabase** (CLI + Docker), `env.ts`, browser/server clients, type generation script. _Done when:_ a health page reads `now()` from the DB.
+3. **`domain/money` + `domain/dates`.** _Done when:_ unit tests cover JPY(0)/USD(2)/KWD(3) decimals, parsing "1,234.5", negative values, month ranges across timezones.
+4. **CI workflow** running lint, typecheck, unit tests. _Done when:_ a green run on push.
+
+### M1: Auth
+
+5. **`profiles` migration + trigger + RLS + pgTAP.** _Done when:_ signup creates a profile, and cross-user reads fail.
+6. **Email/password** signup, login, logout, forgot/reset, callback route, middleware protection. _Done when:_ E2E signs up → confirms (Inbucket) → reaches `/dashboard`; logged-out users get redirected.
+7. **Google OAuth.** _Done when:_ manual test on local + preview works (configured in Supabase dashboard).
+8. **TOTP MFA** enroll/unenroll in settings/security, challenge page, AAL2 enforcement in middleware. _Done when:_ E2E with an enrolled user can't reach the app without a code.
+
+### M2: Shell
+
+9. **AppShell**: sidebar/bottom nav, theme toggle, empty route stubs, QuickAddFab placeholder. _Done when:_ Playwright at mobile + desktop viewport shows the correct nav.
+
+### M3: Accounts
+
+10. **`accounts` migration + balances view + RLS tests.** _Done when:_ pgTAP passes and the balance = opening + sum(transactions).
+11. **Accounts UI** (list with balance per currency, create/edit, cascade delete with type-to-confirm). _Done when:_ E2E creates, edits, and deletes an account.
+
+### M4: Categories
+
+12. **`categories` migration + default seeding on signup.** _Done when:_ a new user has ~15 defaults.
+13. **Category manager** (add/rename/recolor/hide/delete; on delete, transactions → uncategorized, budgets removed). _Done when:_ E2E passes.
+
+### M5: Transactions
+
+14. **`transactions` migration + indexes + RLS + `text/normalize`.** _Done when:_ pgTAP + unit tests pass.
+15. **Transaction list**: server-paginated, filters (account, category, date range, text, uncategorized). _Done when:_ seeded 1k rows paginate and filter correctly.
+16. **Transaction form + quick-add sheet** (create/edit/delete, MoneyInput by account currency, manual category → `source='manual'`). _Done when:_ E2E quick-adds from any page.
+17. **Transfers**: `create_transfer` RPC, TransferForm, delete-leg trigger, exclusion from income/expense. _Done when:_ pgTAP shows deleting an account converts the counterpart leg, and the UI shows a transfer pair.
+
+### M6: Rules
+
+18. **`categorization_rules` migration + RLS.**
+19. **`rules/match` + `rules/apply`** (priority order, all operators, safe regex with a length limit). _Done when:_ unit tests for every operator and for priority ties.
+20. **Rules manager UI** with a live "test against recent transactions" view, plus **CreateRulePrompt** after a manual recategorize. _Done when:_ E2E: a manual edit → accept prompt → the rule exists and applies on the next add.
+
+### M7: AI categorization
+
+21. **`ai/provider` interface + `categorize/pipeline`** with a fake provider. _Done when:_ unit tests show manual rows untouched, rules first, AI only for leftovers, invalid AI category ids dropped.
+22. **Gemini adapter** (structured output, batching, backoff, minimized payload). _Done when:_ contract test with mocked HTTP; a manual smoke test with a real free key.
+23. **`/api/categorize` route** + per-user rate limit + "Auto-categorize uncategorized" button on transactions. _Done when:_ E2E (fake provider via env flag) categorizes rows and shows the AI badge.
+
+### M8: CSV import
+
+24. **`csv/parse` + `csv/mapping` + `csv/normalize`.** _Done when:_ fixture CSVs (signed amount, debit/credit, inverted, DD/MM vs MM/DD, BOM, semicolon delimiter) parse correctly and bad rows report errors.
+25. **`dedup/fingerprint` + `dedup/detect`** (DB, in-file, matches upcoming recurring). _Done when:_ unit tests, including "two real identical purchases" stay reviewable rather than auto-dropped.
+26. **`csv_mapping_presets`, `import_batches` migrations + `commit_import` RPC** (atomic, stores fingerprints, batch id). _Done when:_ pgTAP shows all-or-nothing insert.
+27. **Import wizard UI** (FileDrop → Mapping with saved preset → Preview with dup toggles and row errors → Categorize → Commit). _Done when:_ E2E imports a fixture, re-import flags duplicates, and the second import auto-loads the preset.
+28. **Import history + undo** (delete by batch id). _Done when:_ E2E undo removes exactly that batch.
+
+### M9: Budgets
+
+29. **`budgets` migration + RLS.**
+30. **`budgets/progress` + `budgets/alerts`.** _Done when:_ unit tests for transfers excluded, multi-currency kept separate, thresholds.
+31. **Budgets UI** (month picker, grid, progress bars, copy last month) + **AlertBanner** in the shell. _Done when:_ E2E: spend over 80% shows a warning.
+
+### M10: Recurring
+
+32. **`recurring_rules` migration + RLS.**
+33. **`recurring/schedule` + `recurring/upcoming`.** _Done when:_ unit tests for Jan 31 monthly → Feb 28/29, weekly, yearly, end dates.
+34. **Recurring UI + UpcomingList** (confirm → posts transaction and advances `next_due`; skip; edit). _Done when:_ E2E confirms a bill, the transaction appears, and the next due date advances.
+35. **Wire recurring into import dedup** (an imported row that matches an upcoming item can mark it done instead of duplicating). _Done when:_ E2E passes.
+
+### M11: Savings goals
+
+36. **`savings_goals` + `goal_contributions` migrations + RLS.**
+37. **`goals/progress` + Goals UI** (cards, contribute, edit, complete). _Done when:_ unit + E2E pass.
+
+### M12: Dashboard
+
+38. **Report SQL functions** (monthly totals, spend by category, trend), all grouped by currency. _Done when:_ pgTAP with fixture data matches expected sums.
+39. **Dashboard components** (CurrencyTabs, KPIs, category donut, trend line, budget summary, upcoming bills, goals). _Done when:_ E2E with seeded data renders correct numbers; empty states for a new user.
+
+### M13: Data rights
+
+40. **Export** (`/api/export` ZIP of CSVs via `export/toCsv`). _Done when:_ E2E downloads the ZIP and its row counts match.
+41. **Account deletion** (re-auth/AAL2, admin delete, cascade). _Done when:_ E2E deletes a user and pgTAP/queries show zero rows remain.
+
+### M14: Ship
+
+42. **Hardening**: a11y pass (axe in Playwright), loading/error boundaries, security headers, Gemini privacy note at signup.
+43. **Deploy**: Supabase cloud free project, run migrations, Vercel Hobby, Google OAuth prod redirect URLs, optional keep-alive workflow. _Done when:_ full E2E smoke run against production.
+
+### v2 backlog (not in scope)
+
+Receipt OCR (behind a provider adapter like AI), split transactions, budget rollover, FX conversion, email alerts, bank sync.
+
+## Verification (overall)
+
+- Every task: `npm run lint && npm run typecheck && npm test` + relevant pgTAP (`supabase test db`) + Playwright spec.
+- Milestone gate: full E2E suite against local Supabase (`supabase start`) passes in CI.
+- Final: manual walkthrough on phone + desktop: sign up → MFA → create 2 accounts (different currencies) → import CSV → auto-categorize → set budget → confirm a recurring bill → add goal contribution → dashboard → export → delete account.
+
+---
+
+## Progress
+
+- [x] Task 1: Scaffold (Next.js 16 + TS + Tailwind 4 + shadcn/ui + ESLint/Prettier + Vitest + Playwright)
