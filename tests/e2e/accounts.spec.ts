@@ -82,6 +82,7 @@ test("form validation keeps the dialog open with helpful errors", async ({
     dialog.getByText("Too many decimal places for this currency."),
   ).toBeVisible();
   await expect(dialog.getByLabel("Name")).toHaveValue("Cash");
+  await expect(dialog.getByLabel("Currency")).toHaveValue("JPY");
 
   await dialog.getByLabel(/Opening balance/).fill("10");
   await dialog.getByRole("button", { name: "Add account" }).click();

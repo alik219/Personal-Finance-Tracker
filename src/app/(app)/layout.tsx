@@ -6,10 +6,12 @@ import { Sidebar } from "@/components/shell/sidebar";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
 import { requireUser } from "@/lib/auth/session";
+import { loadTransactionFormOptions } from "@/server/transaction-form-options";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await requireUser();
   const userMenu = <UserMenu email={user.email} />;
+  const formOptions = await loadTransactionFormOptions(user);
 
   return (
     <div className="flex flex-1">
@@ -28,7 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </main>
       </div>
       <BottomNav footer={userMenu} />
-      <QuickAddFab />
+      <QuickAddFab options={formOptions} />
     </div>
   );
 }

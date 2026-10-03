@@ -66,11 +66,17 @@ test("add expense and income categories; names are unique per type", async ({
   await addCategory(page, { name: "Side hustle", kind: "Income" });
   await expect(row(page, "Income", "Side hustle")).toBeVisible();
 
-  const dupe = await addCategory(page, { name: "groceries" });
+  const dupe = await addCategory(page, {
+    name: "groceries",
+    color: "Teal",
+    icon: "Coffee",
+  });
   await expect(
     dupe.getByText("You already have a category with this name."),
   ).toBeVisible();
   await expect(dupe.getByLabel("Name")).toHaveValue("groceries");
+  await expect(dupe.getByRole("radio", { name: "Teal" })).toBeChecked();
+  await expect(dupe.getByRole("radio", { name: "Coffee" })).toBeChecked();
   await dupe.getByRole("button", { name: "Close" }).click();
 
   // The same name is fine under the other type.

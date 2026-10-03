@@ -43,6 +43,20 @@ export async function listAccounts(supabase: Client): Promise<Account[]> {
   }));
 }
 
+export type AccountOption = { id: string; name: string; currency: string };
+
+/** Accounts for pickers: no balances. */
+export async function listAccountOptions(
+  supabase: Client,
+): Promise<AccountOption[]> {
+  const { data, error } = await supabase
+    .from("accounts")
+    .select("id, name, currency")
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
 export async function getAccount(supabase: Client, id: string) {
   const { data, error } = await supabase
     .from("accounts")

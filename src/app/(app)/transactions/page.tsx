@@ -14,24 +14,23 @@ import {
   hasFilters,
   parseTransactionFilters,
 } from "@/lib/validation/transaction-filters";
-import { listAccounts } from "@/server/repos/accounts";
-import { listCategories } from "@/server/repos/categories";
 import { listTransactions } from "@/server/repos/transactions";
+import { loadTransactionFormOptions } from "@/server/transaction-form-options";
 
 export const metadata: Metadata = { title: "Transactions" };
 
 export default async function TransactionsPage({
   searchParams,
 }: PageProps<"/transactions">) {
-  await requireUser();
+  const user = await requireUser();
   const filters = parseTransactionFilters(await searchParams);
   const supabase = await createClient();
 
-  const [accounts, categories, result] = await Promise.all([
-    listAccounts(supabase),
-    listCategories(supabase),
+  const [options, result] = await Promise.all([
+    loadTransactionFormOptions(user),
     listTransactions(supabase, filters),
   ]);
+  const { accounts, categories } = options;
 
   const header = (
     <PageHeader
@@ -66,7 +65,7 @@ export default async function TransactionsPage({
         <EmptyState
           icon={ArrowLeftRight}
           title="No transactions yet"
-          description="Transactions you add will show up here."
+          description="Use the + button to add your first expense or income."
         />
       </>
     );
@@ -82,7 +81,7 @@ export default async function TransactionsPage({
       />
       {result.rows.length > 0 ? (
         <>
-          <TransactionList rows={result.rows} />
+          <TransactionList rows={result.rows} options={options} />
           <Pagination
             filters={filters}
             total={result.total}

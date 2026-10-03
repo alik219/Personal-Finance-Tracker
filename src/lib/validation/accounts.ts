@@ -3,11 +3,7 @@ import { z } from "zod";
 import { isAccountType } from "@/domain/accounts/account-types";
 import { isCurrencyCode, parseAmount } from "@/domain/money/money";
 
-const AMOUNT_ERRORS = {
-  empty: "Enter an amount.",
-  invalid: "Enter a number like 1,234.56.",
-  too_many_decimals: "Too many decimal places for this currency.",
-} as const;
+import { AMOUNT_ERRORS } from "./money";
 
 const name = z
   .string()

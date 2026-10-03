@@ -24,6 +24,7 @@ import {
 } from "@/domain/accounts/account-types";
 import type { CurrencyOption } from "@/domain/money/currencies";
 import { toDecimalString } from "@/domain/money/money";
+import { submitWithoutReset } from "@/lib/forms/submit-without-reset";
 import type { FormState } from "@/lib/validation/form";
 import { createAccount, updateAccount } from "@/server/actions/accounts";
 
@@ -80,7 +81,7 @@ function AccountForm({
   const errors = state.fieldErrors;
 
   return (
-    <form action={formAction} className="grid gap-4">
+    <form onSubmit={submitWithoutReset(formAction)} className="grid gap-4">
       <DialogHeader>
         <DialogTitle>{editing ? "Edit account" : "Add account"}</DialogTitle>
         <DialogDescription>

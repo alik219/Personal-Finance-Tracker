@@ -1,9 +1,14 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import {
+  TransactionForm,
+  type TransactionFormOptions,
+} from "@/components/transactions/transaction-form";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -12,10 +17,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-// Placeholder: backlog task 16 replaces the sheet body with the
-// transaction form.
-export function QuickAddFab() {
+/** The floating + button: add a transaction from any page. */
+export function QuickAddFab({ options }: { options: TransactionFormOptions }) {
   const [open, setOpen] = useState(false);
+  const hasAccounts = options.accounts.length > 0;
 
   return (
     <>
@@ -28,14 +33,34 @@ export function QuickAddFab() {
         <Plus className="size-6" aria-hidden />
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent>
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Add a transaction</SheetTitle>
             <SheetDescription>
-              Quick add is coming soon. You&apos;ll be able to log an expense or
-              income from any page.
+              {hasAccounts
+                ? "Log an expense or income."
+                : "Transactions belong to an account. Add one first."}
             </SheetDescription>
           </SheetHeader>
+          <div className="px-4 pb-4">
+            {!hasAccounts ? (
+              <Link
+                href="/accounts"
+                onClick={() => setOpen(false)}
+                className={buttonVariants()}
+              >
+                Go to accounts
+              </Link>
+            ) : (
+              // Mounted only while open, so each opening starts fresh.
+              open && (
+                <TransactionForm
+                  options={options}
+                  onDone={() => setOpen(false)}
+                />
+              )
+            )}
+          </div>
         </SheetContent>
       </Sheet>
     </>

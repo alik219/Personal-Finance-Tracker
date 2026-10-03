@@ -8,6 +8,7 @@ import {
   type CategoryColor,
   type CategoryIcon,
 } from "@/domain/categories/categories";
+import type { CategorySource } from "@/domain/transactions/category-source";
 import type { Database } from "@/lib/supabase/types";
 import {
   escapeLike,
@@ -16,7 +17,6 @@ import {
 } from "@/lib/validation/transaction-filters";
 
 type Client = SupabaseClient<Database>;
-type CategorySource = Database["public"]["Enums"]["category_source"];
 
 export type TransactionRow = {
   id: string;
@@ -99,4 +99,52 @@ export async function listTransactions(
     page: filters.page,
     pageSize: PAGE_SIZE,
   };
+}
+
+export async function getTransaction(supabase: Client, id: string) {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("id, description, category_id, category_source")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export type TransactionInput = {
+  accountId: string;
+  date: string;
+  amountMinor: bigint;
+  description: string;
+  normalizedDescription: string;
+  categoryId: string | null;
+  categorySource: CategorySource;
+};
+
+function toRow(input: TransactionInput) {
+  return {
+    account_id: input.accountId,
+    date: input.date,
+    amount_minor: Number(input.amountMinor),
+    description: input.description,
+    normalized_description: input.normalizedDescription,
+    category_id: input.categoryId,
+    category_source: input.categorySource,
+  };
+}
+
+export function insertTransaction(supabase: Client, input: TransactionInput) {
+  return supabase.from("transactions").insert(toRow(input));
+}
+
+export function updateTransaction(
+  supabase: Client,
+  id: string,
+  input: TransactionInput,
+) {
+  return supabase.from("transactions").update(toRow(input)).eq("id", id);
+}
+
+export function deleteTransaction(supabase: Client, id: string) {
+  return supabase.from("transactions").delete().eq("id", id);
 }

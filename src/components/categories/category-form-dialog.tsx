@@ -28,6 +28,7 @@ import {
   type CategoryIcon,
   type CategoryKind,
 } from "@/domain/categories/categories";
+import { submitWithoutReset } from "@/lib/forms/submit-without-reset";
 import type { FormState } from "@/lib/validation/form";
 import { cn } from "@/lib/utils";
 import { createCategory, updateCategory } from "@/server/actions/categories";
@@ -106,7 +107,7 @@ function CategoryForm({
   }, [state.success, onDone]);
 
   return (
-    <form action={formAction} className="grid gap-4">
+    <form onSubmit={submitWithoutReset(formAction)} className="grid gap-4">
       <DialogHeader>
         <DialogTitle>{editing ? "Edit category" : "Add category"}</DialogTitle>
         <DialogDescription>
