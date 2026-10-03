@@ -9,7 +9,7 @@ export function uniqueEmail(label: string): string {
   return `e2e-${label}-${randomUUID().slice(0, 8)}@example.com`;
 }
 
-function adminClient() {
+export function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!url || !secret) {
@@ -28,12 +28,12 @@ export async function createConfirmedUser(
   { displayName = "Test User" }: { displayName?: string } = {},
 ) {
   const email = uniqueEmail(label);
-  const { error } = await adminClient().auth.admin.createUser({
+  const { data, error } = await adminClient().auth.admin.createUser({
     email,
     password: TEST_PASSWORD,
     email_confirm: true,
     user_metadata: { display_name: displayName },
   });
   if (error) throw error;
-  return { email, password: TEST_PASSWORD, displayName };
+  return { id: data.user.id, email, password: TEST_PASSWORD, displayName };
 }

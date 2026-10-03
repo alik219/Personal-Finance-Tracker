@@ -110,3 +110,16 @@ export function formatMonth(
     month: "long",
   }).format(new Date(Date.UTC(year, m - 1, 1)));
 }
+
+/** E.g. "2026-03-05" -> "Mar 5, 2026". Calendar dates have no time zone. */
+export function formatDate(
+  date: ISODate,
+  { locale = "en-US" }: { locale?: string } = {},
+): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${date}T00:00:00Z`));
+}

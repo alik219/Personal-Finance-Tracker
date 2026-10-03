@@ -4,6 +4,7 @@ import {
   addMonths,
   currentMonth,
   daysInMonth,
+  formatDate,
   formatMonth,
   isISODate,
   isMonthKey,
@@ -118,5 +119,13 @@ describe("formatMonth", () => {
   it("formats in the given locale", () => {
     expect(formatMonth("2026-10")).toBe("October 2026");
     expect(formatMonth("2026-01", { locale: "de-DE" })).toBe("Januar 2026");
+  });
+});
+
+describe("formatDate", () => {
+  it("formats the calendar date without shifting it by time zone", () => {
+    expect(formatDate("2026-03-05")).toBe("Mar 5, 2026");
+    expect(formatDate("2026-12-31")).toBe("Dec 31, 2026");
+    expect(formatDate("2026-01-01", { locale: "en-GB" })).toBe("1 Jan 2026");
   });
 });

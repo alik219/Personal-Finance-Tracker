@@ -1,21 +1,30 @@
-D
-| Platform | Web app, responsive (sidebar on desktop, bottom tabs on mobile), light/dark, quick-add everywhere |
-| Users | Multi-user product, free/personal (not monetized) |
-| Stack | Next.js (App Router) + TypeScript, shadcn/ui + Tailwind, Recharts |
-| Backend | Supabase Free (Postgres + Auth + RLS). Hosting: Vercel Hobby |
-| Cost | **$0**: every service on a free tier |
-| Auth | Email+password, Google OAuth, TOTP MFA |
-| Input | Manual entry + CSV import. Receipt OCR **deferred to v2** |
-| Accounts | Multiple accounts + transfers. Deleting an account **cascades** (with confirmation) |
-| Currency | Multi-currency per account, **no conversion**. All totals grouped by currency |
-| Categories | Default set + custom, **flat**. One category per transaction (splits in v2) |
-| Categorization | **Rules → Gemini (free tier) → manual override** (manual edit offers "create rule") |
-| CSV | Column mapper + saved preset per account. Duplicates: detect and review before commit |
-| Recurring | Shown as "upcoming"; user confirms to post |
-| Budgets | Per category per month, no rollover, in-app alerts at 80%/100% |
-| Goals | Manual contributions, separate from account balances |
-| v1 extras | CSV data export, self-service account deletion |
-| Testing | Vitest (pure logic) + Playwright (E2E) + pgTAP RLS tests on local Supabase |
+# Personal Finance Tracker — Component Map & Implementation Backlog
+
+## Context
+
+A greenfield, **multi-user, zero-cost** web app for tracking personal finances, built in `D:\Projects\Personal Finance Tracker`. Requirements come from a 8-round interview. This document is Phase 2 (modular component map) and Phase 3 (ordered backlog).
+
+## Locked decisions (from interview)
+
+| Area           | Decision                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| Platform       | Web app, responsive (sidebar on desktop, bottom tabs on mobile), light/dark, quick-add everywhere |
+| Users          | Multi-user product, free/personal (not monetized)                                                 |
+| Stack          | Next.js (App Router) + TypeScript, shadcn/ui + Tailwind, Recharts                                 |
+| Backend        | Supabase Free (Postgres + Auth + RLS). Hosting: Vercel Hobby                                      |
+| Cost           | **$0**: every service on a free tier                                                              |
+| Auth           | Email+password, Google OAuth, TOTP MFA                                                            |
+| Input          | Manual entry + CSV import. Receipt OCR **deferred to v2**                                         |
+| Accounts       | Multiple accounts + transfers. Deleting an account **cascades** (with confirmation)               |
+| Currency       | Multi-currency per account, **no conversion**. All totals grouped by currency                     |
+| Categories     | Default set + custom, **flat**. One category per transaction (splits in v2)                       |
+| Categorization | **Rules → Gemini (free tier) → manual override** (manual edit offers "create rule")               |
+| CSV            | Column mapper + saved preset per account. Duplicates: detect and review before commit             |
+| Recurring      | Shown as "upcoming"; user confirms to post                                                        |
+| Budgets        | Per category per month, no rollover, in-app alerts at 80%/100%                                    |
+| Goals          | Manual contributions, separate from account balances                                              |
+| v1 extras      | CSV data export, self-service account deletion                                                    |
+| Testing        | Vitest (pure logic) + Playwright (E2E) + pgTAP RLS tests on local Supabase                        |
 
 ## Cross-cutting design rules
 
@@ -266,3 +275,4 @@ Receipt OCR (behind a provider adapter like AI), split transactions, budget roll
 - [x] Task 10: `accounts` table (enum type, per-user unique name ignoring case, currency fixed after creation via column grants) + `account_balances` view (security_invoker; opening balance only until task 14 adds transactions). 20 pgTAP tests.
 - [x] Task 11: Accounts page: totals per currency, add/edit dialog (amounts parsed per currency), delete with type-to-confirm (cascade). Repo converts bigint at the boundary. 5 E2E flows incl. cross-user privacy.
 - [x] Batch D (tasks 12–13): `categories` table (income/expense kind fixed after creation, per-user unique name per kind ignoring case, palette/icon keys owned by `src/domain/categories`, `hidden` flag) + RLS/column grants; `private.seed_default_categories()` (17 defaults, idempotent) called by the sign-up trigger and backfilled for existing users; 21 pgTAP tests. `/settings/categories` manager: add, rename, recolor, change icon, hide/show, delete with confirm (later tables use set null / cascade). `/settings` is now an index (Profile marked coming soon). Removed Recurring, Goals and Import pages and nav items. 7 E2E flows.
+- [x] Batch E (tasks 14–15): `transactions` table. No `kind` or `currency` columns: the sign is the kind (negative = expense) and currency comes from the account. Composite FKs `(account_id, user_id)` / `(category_id, user_id)` stop rows pointing at another user's account or category; category delete → `set null (category_id)` and a trigger resets `category_source` to `none` (enum `none | ai | manual`). `account_balances` now = opening + sum(transactions). `domain/text/normalize` (stored as `normalized_description`, for AI grouping later). 24 pgTAP tests. `/transactions`: server-paginated (50/page) newest-first list with URL filters (account, category or uncategorized, date range, literal text search) via a `next/form` GET form; empty states. E2E seeds 1,000 rows (`tests/e2e/helpers/seed.ts`) and checks paging, each filter, combined filters across pages/reload, balances. E2E workers capped at 4 locally (`E2E_WORKERS` overrides) after timeouts under load. Also restored the damaged top of this file.

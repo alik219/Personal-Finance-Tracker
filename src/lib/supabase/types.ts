@@ -105,6 +105,70 @@ export type Database = {
         };
         Relationships: [];
       };
+      transactions: {
+        Row: {
+          account_id: string;
+          amount_minor: number;
+          category_id: string | null;
+          category_source: Database["public"]["Enums"]["category_source"];
+          created_at: string;
+          date: string;
+          description: string;
+          id: string;
+          normalized_description: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          account_id: string;
+          amount_minor: number;
+          category_id?: string | null;
+          category_source?: Database["public"]["Enums"]["category_source"];
+          created_at?: string;
+          date: string;
+          description: string;
+          id?: string;
+          normalized_description?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          account_id?: string;
+          amount_minor?: number;
+          category_id?: string | null;
+          category_source?: Database["public"]["Enums"]["category_source"];
+          created_at?: string;
+          date?: string;
+          description?: string;
+          id?: string;
+          normalized_description?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_user_id_fkey";
+            columns: ["account_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "account_balances";
+            referencedColumns: ["account_id", "user_id"];
+          },
+          {
+            foreignKeyName: "transactions_account_id_user_id_fkey";
+            columns: ["account_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "transactions_category_id_user_id_fkey";
+            columns: ["category_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
     };
     Views: {
       account_balances: {
@@ -116,13 +180,13 @@ export type Database = {
         };
         Insert: {
           account_id?: string | null;
-          balance_minor?: number | null;
+          balance_minor?: never;
           currency?: string | null;
           user_id?: string | null;
         };
         Update: {
           account_id?: string | null;
-          balance_minor?: number | null;
+          balance_minor?: never;
           currency?: string | null;
           user_id?: string | null;
         };
@@ -142,6 +206,7 @@ export type Database = {
         | "loan"
         | "other";
       category_kind: "income" | "expense";
+      category_source: "none" | "ai" | "manual";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -279,6 +344,7 @@ export const Constants = {
         "other",
       ],
       category_kind: ["income", "expense"],
+      category_source: ["none", "ai", "manual"],
     },
   },
 } as const;

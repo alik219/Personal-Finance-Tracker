@@ -14,6 +14,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // One Next server and one local Supabase serve every worker; past ~4
+  // parallel browsers, logins and page loads start hitting timeouts.
+  workers: Number(process.env.E2E_WORKERS ?? 4),
   reporter: process.env.CI ? "github" : "list",
   // Auth flows hash passwords and send email; 5s is tight with parallel workers.
   expect: { timeout: 10_000 },
