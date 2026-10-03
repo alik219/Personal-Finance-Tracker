@@ -1,30 +1,21 @@
-# Personal Finance Tracker — Component Map & Implementation Backlog
-
-## Context
-
-A greenfield, **multi-user, zero-cost** web app for tracking personal finances, built in `D:\Projects\Personal Finance Tracker`. Requirements come from a 8-round interview. This document is Phase 2 (modular component map) and Phase 3 (ordered backlog). No application code yet.
-
-## Locked decisions (from interview)
-
-| Area           | Decision                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------- |
-| Platform       | Web app, responsive (sidebar on desktop, bottom tabs on mobile), light/dark, quick-add everywhere |
-| Users          | Multi-user product, free/personal (not monetized)                                                 |
-| Stack          | Next.js (App Router) + TypeScript, shadcn/ui + Tailwind, Recharts                                 |
-| Backend        | Supabase Free (Postgres + Auth + RLS). Hosting: Vercel Hobby                                      |
-| Cost           | **$0**: every service on a free tier                                                              |
-| Auth           | Email+password, Google OAuth, TOTP MFA                                                            |
-| Input          | Manual entry + CSV import. Receipt OCR **deferred to v2**                                         |
-| Accounts       | Multiple accounts + transfers. Deleting an account **cascades** (with confirmation)               |
-| Currency       | Multi-currency per account, **no conversion**. All totals grouped by currency                     |
-| Categories     | Default set + custom, **flat**. One category per transaction (splits in v2)                       |
-| Categorization | **Rules → Gemini (free tier) → manual override** (manual edit offers "create rule")               |
-| CSV            | Column mapper + saved preset per account. Duplicates: detect and review before commit             |
-| Recurring      | Shown as "upcoming"; user confirms to post                                                        |
-| Budgets        | Per category per month, no rollover, in-app alerts at 80%/100%                                    |
-| Goals          | Manual contributions, separate from account balances                                              |
-| v1 extras      | CSV data export, self-service account deletion                                                    |
-| Testing        | Vitest (pure logic) + Playwright (E2E) + pgTAP RLS tests on local Supabase                        |
+D
+| Platform | Web app, responsive (sidebar on desktop, bottom tabs on mobile), light/dark, quick-add everywhere |
+| Users | Multi-user product, free/personal (not monetized) |
+| Stack | Next.js (App Router) + TypeScript, shadcn/ui + Tailwind, Recharts |
+| Backend | Supabase Free (Postgres + Auth + RLS). Hosting: Vercel Hobby |
+| Cost | **$0**: every service on a free tier |
+| Auth | Email+password, Google OAuth, TOTP MFA |
+| Input | Manual entry + CSV import. Receipt OCR **deferred to v2** |
+| Accounts | Multiple accounts + transfers. Deleting an account **cascades** (with confirmation) |
+| Currency | Multi-currency per account, **no conversion**. All totals grouped by currency |
+| Categories | Default set + custom, **flat**. One category per transaction (splits in v2) |
+| Categorization | **Rules → Gemini (free tier) → manual override** (manual edit offers "create rule") |
+| CSV | Column mapper + saved preset per account. Duplicates: detect and review before commit |
+| Recurring | Shown as "upcoming"; user confirms to post |
+| Budgets | Per category per month, no rollover, in-app alerts at 80%/100% |
+| Goals | Manual contributions, separate from account balances |
+| v1 extras | CSV data export, self-service account deletion |
+| Testing | Vitest (pure logic) + Playwright (E2E) + pgTAP RLS tests on local Supabase |
 
 ## Cross-cutting design rules
 
@@ -247,3 +238,4 @@ Receipt OCR (behind a provider adapter like AI), split transactions, budget roll
 ## Progress
 
 - [x] Task 1: Scaffold (Next.js 16 + TS + Tailwind 4 + shadcn/ui + ESLint/Prettier + Vitest + Playwright)
+- [x] Task 2: Local Supabase (CLI in devDeps; realtime/storage/edge/analytics disabled), `env.ts`, browser/server clients, `health_check()` RPC + `/health` page, `db:*` scripts
