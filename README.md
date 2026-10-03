@@ -8,7 +8,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the architecture and backlog.
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 24 (see `.nvmrc`) with npm 11.19+ (`npm install -g npm@11`; npm 12 needs Node 24.15+). Older npm versions drop platform-specific entries from `package-lock.json` on Windows, which breaks `npm ci` in CI.
 - Docker Desktop with WSL 2, running (for the local Supabase database)
 
 ## First-time setup
