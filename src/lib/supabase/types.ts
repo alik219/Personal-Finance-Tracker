@@ -194,6 +194,7 @@ export type Database = {
       };
     };
     Functions: {
+      claim_ai_run: { Args: Record<PropertyKey, never>; Returns: boolean };
       health_check: { Args: Record<PropertyKey, never>; Returns: string };
     };
     Enums: {

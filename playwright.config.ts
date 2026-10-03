@@ -33,5 +33,8 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
+    // Tests use the keyword-matching fake, never the real Gemini API (even
+    // when GEMINI_API_KEY is in .env.local).
+    env: { AI_PROVIDER: "fake" },
   },
 });

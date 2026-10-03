@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
+import { AutoCategorize } from "@/components/transactions/auto-categorize";
 import { Pagination } from "@/components/transactions/pagination";
 import { TransactionFiltersForm } from "@/components/transactions/transaction-filters";
 import { TransactionList } from "@/components/transactions/transaction-list";
@@ -14,10 +15,18 @@ import {
   hasFilters,
   parseTransactionFilters,
 } from "@/lib/validation/transaction-filters";
-import { listTransactions } from "@/server/repos/transactions";
+import { isAiEnabled } from "@/server/ai";
+import {
+  countUncategorized,
+  listTransactions,
+} from "@/server/repos/transactions";
 import { loadTransactionFormOptions } from "@/server/transaction-form-options";
 
 export const metadata: Metadata = { title: "Transactions" };
+
+// Auto-categorize (a server action on this page) can make several Gemini
+// calls with retries.
+export const maxDuration = 60;
 
 export default async function TransactionsPage({
   searchParams,
@@ -26,9 +35,11 @@ export default async function TransactionsPage({
   const filters = parseTransactionFilters(await searchParams);
   const supabase = await createClient();
 
-  const [options, result] = await Promise.all([
+  const aiEnabled = isAiEnabled();
+  const [options, result, uncategorized] = await Promise.all([
     loadTransactionFormOptions(user),
     listTransactions(supabase, filters),
+    aiEnabled ? countUncategorized(supabase) : 0,
   ]);
   const { accounts, categories } = options;
 
@@ -74,6 +85,7 @@ export default async function TransactionsPage({
   return (
     <>
       {header}
+      {aiEnabled && <AutoCategorize uncategorized={uncategorized} />}
       <TransactionFiltersForm
         filters={filters}
         accounts={accounts}

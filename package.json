@@ -19,7 +19,8 @@
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/types.ts && prettier --write src/lib/supabase/types.ts",
-    "db:test": "supabase test db"
+    "db:test": "supabase test db",
+    "ai:smoke": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gemini-smoke.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

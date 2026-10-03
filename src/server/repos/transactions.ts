@@ -8,6 +8,8 @@ import {
   type CategoryColor,
   type CategoryIcon,
 } from "@/domain/categories/categories";
+import type { PipelineTransaction } from "@/domain/categorize/pipeline";
+import { normalizeDescription } from "@/domain/text/normalize";
 import type { CategorySource } from "@/domain/transactions/category-source";
 import type { Database } from "@/lib/supabase/types";
 import {
@@ -147,4 +149,77 @@ export function updateTransaction(
 
 export function deleteTransaction(supabase: Client, id: string) {
   return supabase.from("transactions").delete().eq("id", id);
+}
+
+/** Uncategorized rows for the AI pipeline, newest first. */
+export async function listUncategorized(
+  supabase: Client,
+  limit: number,
+): Promise<PipelineTransaction[]> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(
+      `id, description, normalized_description, amount_minor, category_id, category_source,
+       account:accounts!transactions_account_id_user_id_fkey (currency)`,
+    )
+    .eq("category_source", "none")
+    .order("date", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data.map((t) => ({
+    id: t.id,
+    // Older rows may predate the stored normalized text.
+    normalizedDescription:
+      t.normalized_description || normalizeDescription(t.description),
+    amountMinor: BigInt(t.amount_minor),
+    currency: t.account.currency,
+    categoryId: t.category_id,
+    categorySource: t.category_source,
+  }));
+}
+
+export async function countUncategorized(supabase: Client): Promise<number> {
+  const { count, error } = await supabase
+    .from("transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("category_source", "none");
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Saves AI picks, one request per category (and per 100 ids, to keep URLs
+ * short). Rows the user categorized meanwhile are left alone. Returns how
+ * many rows changed.
+ */
+export async function applyAiCategories(
+  supabase: Client,
+  updates: { id: string; categoryId: string }[],
+): Promise<number> {
+  const idsByCategory = new Map<string, string[]>();
+  for (const { id, categoryId } of updates) {
+    idsByCategory.set(categoryId, [
+      ...(idsByCategory.get(categoryId) ?? []),
+      id,
+    ]);
+  }
+
+  const requests = [...idsByCategory].flatMap(([categoryId, ids]) =>
+    Array.from({ length: Math.ceil(ids.length / 100) }, (_, i) =>
+      supabase
+        .from("transactions")
+        .update({ category_id: categoryId, category_source: "ai" })
+        .in("id", ids.slice(i * 100, (i + 1) * 100))
+        .eq("category_source", "none")
+        .select("id"),
+    ),
+  );
+
+  let changed = 0;
+  for (const { data, error } of await Promise.all(requests)) {
+    if (error) throw error;
+    changed += data.length;
+  }
+  return changed;
 }
