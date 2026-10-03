@@ -224,6 +224,32 @@ Each task is small, independently testable, and merges on its own. **Done when**
 42. **Hardening**: a11y pass (axe in Playwright), loading/error boundaries, security headers, Gemini privacy note at signup.
 43. **Deploy**: Supabase cloud free project, run migrations, Vercel Hobby, Google OAuth prod redirect URLs, optional keep-alive workflow. Mirror `supabase/config.toml` auth settings in the cloud dashboard: Site URL + redirect URLs, email confirmations on, min password 8 with letters+digits, and the `supabase/templates/*.html` email templates (local rate-limit overrides do NOT carry over). _Done when:_ full E2E smoke run against production.
 
+### Batches (how the remaining tasks are delivered)
+
+Low-risk tasks are combined; each task inside a batch is still verified before the next. One summary and one commit per batch.
+
+| #   | Batch                                           | Why grouped / separate                                |
+| --- | ----------------------------------------------- | ----------------------------------------------------- |
+| A   | Task 7: Google OAuth                            | Separate: needs Google Cloud setup by the user        |
+| B   | Task 8: TOTP MFA                                | Separate: security-critical                           |
+| C   | Tasks 9–11: App shell + accounts                | Shell is small; accounts table and UI belong together |
+| D   | Tasks 12–13: Categories                         | Table and UI belong together                          |
+| E   | Tasks 14–15: Transactions table + list          | Big milestone, split in pieces                        |
+| F   | Task 16: Transaction form + quick-add           |                                                       |
+| G   | Task 17: Transfers                              | Tricky (paired rows, delete trigger)                  |
+| H   | Tasks 18–20: Rules                              | Small, self-contained                                 |
+| I   | Task 21: AI provider + pipeline (fake provider) |                                                       |
+| J   | Tasks 22–23: Gemini adapter + categorize route  | Needs a Gemini API key from the user                  |
+| K   | Tasks 24–25: CSV parsing + dedup (pure logic)   | Biggest milestone, split in pieces                    |
+| L   | Tasks 26–28: Import tables, wizard UI, undo     |                                                       |
+| M   | Tasks 29–31: Budgets                            | Small, self-contained                                 |
+| N   | Tasks 32–35: Recurring                          | Self-contained                                        |
+| O   | Tasks 36–37: Savings goals                      | Small                                                 |
+| P   | Tasks 38–39: Dashboard                          |                                                       |
+| Q   | Tasks 40–41: Export + account deletion          | Small, both data rights                               |
+| R   | Task 42: Hardening                              |                                                       |
+| S   | Task 43: Deploy                                 | Separate: needs Vercel/Supabase cloud accounts        |
+
 ### v2 backlog (not in scope)
 
 Receipt OCR (behind a provider adapter like AI), split transactions, budget rollover, FX conversion, email alerts, bank sync.
