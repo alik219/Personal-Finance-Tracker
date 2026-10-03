@@ -12,8 +12,16 @@ insert into auth.users (id, email, raw_user_meta_data) values
 
 -- Sign-up trigger ------------------------------------------------------------
 
+-- Counts are scoped to this file's users: the local DB may also hold
+-- accounts created by E2E runs.
+create temp table test_ids (id uuid) on commit drop;
+insert into test_ids values
+  ('11111111-1111-1111-1111-111111111111'),
+  ('22222222-2222-2222-2222-222222222222'),
+  ('33333333-3333-3333-3333-333333333333');
+
 select is(
-  (select count(*)::int from public.profiles), 2,
+  (select count(*)::int from public.profiles where id in (select id from test_ids)), 2,
   'sign-up creates one profile per user'
 );
 
@@ -156,7 +164,7 @@ select is_empty(
 );
 
 select is(
-  (select count(*)::int from public.profiles), 2,
+  (select count(*)::int from public.profiles where id in (select id from test_ids)), 2,
   'other profiles are kept'
 );
 

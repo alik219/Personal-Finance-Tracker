@@ -28,8 +28,8 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Server Components can't set cookies. Safe to ignore once the
-            // session-refreshing proxy (backlog task 6) is in place.
+            // Server Components can't set cookies. Safe to ignore: the proxy
+            // (src/proxy.ts) refreshes the session on every request.
           }
         },
       },

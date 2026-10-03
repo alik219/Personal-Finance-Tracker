@@ -222,7 +222,7 @@ Each task is small, independently testable, and merges on its own. **Done when**
 ### M14: Ship
 
 42. **Hardening**: a11y pass (axe in Playwright), loading/error boundaries, security headers, Gemini privacy note at signup.
-43. **Deploy**: Supabase cloud free project, run migrations, Vercel Hobby, Google OAuth prod redirect URLs, optional keep-alive workflow. _Done when:_ full E2E smoke run against production.
+43. **Deploy**: Supabase cloud free project, run migrations, Vercel Hobby, Google OAuth prod redirect URLs, optional keep-alive workflow. Mirror `supabase/config.toml` auth settings in the cloud dashboard: Site URL + redirect URLs, email confirmations on, min password 8 with letters+digits, and the `supabase/templates/*.html` email templates (local rate-limit overrides do NOT carry over). _Done when:_ full E2E smoke run against production.
 
 ### v2 backlog (not in scope)
 
@@ -243,3 +243,4 @@ Receipt OCR (behind a provider adapter like AI), split transactions, budget roll
 - [x] Task 3: `domain/money` (parse/format/decimals per currency, exact via BigInt; 38 tests), `domain/money/group` (sum per currency), `domain/dates/month` (today/current month per timezone, month ranges, addMonths; 23 tests). TS target raised to ES2022 for BigInt.
 - [x] Task 4: GitHub Actions CI (`.github/workflows/ci.yml`): format check, lint, typecheck, unit tests, build on push to main and PRs. `.nvmrc` pins Node 24; `.gitattributes` enforces LF.
 - [x] Task 5: `profiles` table + sign-up trigger (validated metadata with defaults) + column-level grants + RLS; `private` schema for helpers; 19 pgTAP tests (`npm run db:test`); verified via real Auth sign-up + REST.
+- [x] Task 6: Email/password auth. `src/proxy.ts` (Next 16 proxy) refreshes sessions + redirects; `requireUser()` re-checks in layouts/pages. Server actions (sign up/in/out, forgot/reset) with zod validation and no account enumeration. `/auth/confirm` (token-hash email links via custom templates) and `/auth/callback` (OAuth code). Placeholder `/dashboard`. 16 E2E tests (desktop + mobile) incl. Mailpit email flows; E2E now runs a production build on port 3100.
