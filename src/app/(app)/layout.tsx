@@ -1,17 +1,21 @@
 import Link from "next/link";
 
+import { BudgetAlertBanner } from "@/components/budgets/budget-alert-banner";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { QuickAddFab } from "@/components/shell/quick-add-fab";
 import { Sidebar } from "@/components/shell/sidebar";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
+import { monthOf } from "@/domain/dates/month";
 import { requireUser } from "@/lib/auth/session";
+import { loadBudgetProgress } from "@/server/budgets";
 import { loadTransactionFormOptions } from "@/server/transaction-form-options";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await requireUser();
   const userMenu = <UserMenu email={user.email} />;
   const formOptions = await loadTransactionFormOptions(user);
+  const budgets = await loadBudgetProgress(monthOf(formOptions.today));
 
   return (
     <div className="flex flex-1">
@@ -26,6 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </header>
         {/* Bottom padding keeps content clear of the phone tab bar and FAB. */}
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 pb-28 md:p-8">
+          <BudgetAlertBanner budgets={budgets} />
           {children}
         </main>
       </div>

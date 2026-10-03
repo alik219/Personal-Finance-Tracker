@@ -38,7 +38,7 @@ export async function listCategories(supabase: Client): Promise<Category[]> {
 export async function getCategory(supabase: Client, id: string) {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("id, name, kind")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;

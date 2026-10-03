@@ -42,6 +42,47 @@ export type Database = {
         };
         Relationships: [];
       };
+      budgets: {
+        Row: {
+          amount_minor: number;
+          category_id: string;
+          created_at: string;
+          currency: string;
+          id: string;
+          month: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount_minor: number;
+          category_id: string;
+          created_at?: string;
+          currency: string;
+          id?: string;
+          month: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          amount_minor?: number;
+          category_id?: string;
+          created_at?: string;
+          currency?: string;
+          id?: string;
+          month?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_user_id_fkey";
+            columns: ["category_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       categories: {
         Row: {
           color: string;

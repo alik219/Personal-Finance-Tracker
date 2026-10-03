@@ -1,9 +1,7 @@
 import { z } from "zod";
 
 import type { CategoryKind } from "@/domain/categories/categories";
-import { parseAmount } from "@/domain/money/money";
-
-import { AMOUNT_ERRORS } from "./money";
+import { positiveAmount } from "./money";
 
 /** Expense or income: the form's toggle, which sets the amount's sign. */
 export type TransactionType = CategoryKind;
@@ -12,26 +10,6 @@ export const TRANSACTION_TYPES: { value: TransactionType; label: string }[] = [
   { value: "expense", label: "Expense" },
   { value: "income", label: "Income" },
 ];
-
-/** Amount text -> positive minor units in the account's currency. */
-function amount(currency: string) {
-  return z.string().transform((text, ctx) => {
-    const result = parseAmount(text, currency);
-    if (!result.ok) {
-      ctx.addIssue({ code: "custom", message: AMOUNT_ERRORS[result.error] });
-      return z.NEVER;
-    }
-    if (result.value <= 0n) {
-      ctx.addIssue({
-        code: "custom",
-        message:
-          "Enter an amount above zero. Use Expense or Income for the direction.",
-      });
-      return z.NEVER;
-    }
-    return result.value;
-  });
-}
 
 const date = z.iso
   .date("Enter a valid date.")
@@ -51,7 +29,10 @@ export function parseTransaction(
   return z
     .object({
       type: z.enum(["expense", "income"], "Choose expense or income."),
-      amount: amount(accountCurrency),
+      amount: positiveAmount(
+        accountCurrency,
+        "Enter an amount above zero. Use Expense or Income for the direction.",
+      ),
       description: z
         .string()
         .trim()
