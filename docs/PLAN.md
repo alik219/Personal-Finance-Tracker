@@ -20,6 +20,7 @@ D
 ## Cross-cutting design rules
 
 - **Money:** `bigint amount_minor` + `char(3) currency` (ISO 4217). Never floats. Sign convention: negative = outflow.
+- **Money at the API boundary:** Supabase returns Postgres `bigint` as a JSON number, so repos convert with `BigInt(n)` on read and send `Number(x)` (or a string) on write. Exact up to 2^53 minor units, far beyond any realistic balance. In the app, money is always `bigint`; use `src/domain/money` to parse and format.
 - **Dates:** transactions use `date` (no time). Month boundaries use `profiles.timezone`.
 - **Isolation:** every user-owned table has `user_id uuid default auth.uid()` + RLS `user_id = auth.uid()`.
 - **Transfers:** two transaction rows sharing `transfer_group_id`, `kind='transfer'`, excluded from income/expense, budgets, and AI. Cross-currency transfers store both amounts as entered.
@@ -239,3 +240,4 @@ Receipt OCR (behind a provider adapter like AI), split transactions, budget roll
 
 - [x] Task 1: Scaffold (Next.js 16 + TS + Tailwind 4 + shadcn/ui + ESLint/Prettier + Vitest + Playwright)
 - [x] Task 2: Local Supabase (CLI in devDeps; realtime/storage/edge/analytics disabled), `env.ts`, browser/server clients, `health_check()` RPC + `/health` page, `db:*` scripts
+- [x] Task 3: `domain/money` (parse/format/decimals per currency, exact via BigInt; 38 tests), `domain/money/group` (sum per currency), `domain/dates/month` (today/current month per timezone, month ranges, addMonths; 23 tests). TS target raised to ES2022 for BigInt.
